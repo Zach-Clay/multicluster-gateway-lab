@@ -1,0 +1,6 @@
+# One control-plane node per cluster keeps two clusters plus Istio inside ~8 GB of Docker memory.
+# The cluster name is passed on the command line: kind create cluster --name us-east --config kind/cluster.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane

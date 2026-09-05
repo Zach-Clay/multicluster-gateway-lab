@@ -1,0 +1,4 @@
+# Sets CLUSTER_NAME on every Deployment so responses say which cluster served them.
+- op: replace
+  path: /spec/template/spec/containers/0/env/1/value
+  value: us-west

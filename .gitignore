@@ -1,0 +1,5 @@
+.DS_Store
+*.log
+.tmp/
+.env
+apps/echo-api/echo-api

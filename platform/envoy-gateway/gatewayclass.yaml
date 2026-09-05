@@ -1,0 +1,8 @@
+# A GatewayClass names an implementation. Envoy Gateway reconciles only Gateways whose class
+# points at its controllerName, which is how it coexists with Istio's own Gateway API controller later.
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy-gateway
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
