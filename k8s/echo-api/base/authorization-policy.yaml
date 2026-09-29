@@ -1,0 +1,17 @@
+# This policy attaches to the users Service's waypoint (rather than a workload
+# selector), so Istio evaluates it with L7-capable waypoint policy processing.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: users-allow-orders
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: users
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/demo/sa/orders

@@ -8,20 +8,21 @@ SHELL := /bin/bash
 export CLUSTER ?= us-east
 export EG_VERSION ?= v1.9.1
 export METALLB_VERSION ?= 0.16.1
+export ISTIO_VERSION ?= 1.31.0
 export IMAGE ?= mcgl/echo-api:dev
 export ENVOY_IMAGE ?= envoyproxy/envoy:v1.32.3
 
 .DEFAULT_GOAL := help
-.PHONY: help tools up cluster metallb envoy-gateway build load deploy status edge-up edge-status edge-down demo-routing demo-edge demo-failover down down-cluster
+.PHONY: help tools up cluster metallb envoy-gateway istio-ambient build load deploy status edge-up edge-status edge-down demo-routing demo-edge demo-failover down down-cluster
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
-	@echo; echo "  CLUSTER=$(CLUSTER)  EG_VERSION=$(EG_VERSION)  METALLB_VERSION=$(METALLB_VERSION)"
+	@echo; echo "  CLUSTER=$(CLUSTER)  EG_VERSION=$(EG_VERSION)  METALLB_VERSION=$(METALLB_VERSION)  ISTIO_VERSION=$(ISTIO_VERSION)"
 
 tools: ## Verify required CLIs are installed
-	@for t in docker kind kubectl helm; do command -v $$t >/dev/null || { echo "missing: $$t"; exit 1; }; done; echo "all tools present"
+	@for t in docker kind kubectl helm istioctl; do command -v $$t >/dev/null || { echo "missing: $$t"; exit 1; }; done; echo "all tools present"
 
-up: tools cluster metallb envoy-gateway build load deploy status ## Create the selected cluster and install everything
+up: tools cluster metallb envoy-gateway istio-ambient build load deploy status ## Create the selected cluster and install everything
 
 cluster: ## Create the kind cluster
 	@scripts/cluster-up.sh
@@ -29,13 +30,15 @@ metallb: ## Install MetalLB with a per-cluster IP pool
 	@scripts/install-metallb.sh
 envoy-gateway: ## Install Envoy Gateway and the cluster Gateway
 	@scripts/install-envoy-gateway.sh
+istio-ambient: ## Install Istio ambient (istiod, CNI, and ztunnel)
+	@scripts/install-istio-ambient.sh
 build: ## Build the echo-api container image
 	@scripts/build-image.sh
 load: ## Load the image into the kind cluster
 	@scripts/load-image.sh
 deploy: ## Deploy demo APIs + HTTPRoutes
 	@scripts/deploy-apps.sh
-status: ## Show Gateway, routes and pods
+status: ## Show Gateway, routes, ambient resources, and pods
 	@scripts/status.sh
 
 edge-up: ## Start the Envoy edge load balancer in front of both clusters

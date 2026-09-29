@@ -6,3 +6,5 @@ resources:
   - users.yaml
   - orders.yaml
   - httproutes.yaml
+  - waypoint.yaml
+  - authorization-policy.yaml

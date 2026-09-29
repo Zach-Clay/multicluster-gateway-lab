@@ -4,3 +4,7 @@ metadata:
   name: demo
   labels:
     gateway-access: "true"
+    # Redirect pod traffic through the node-local ztunnel without adding sidecars.
+    istio.io/dataplane-mode: ambient
+    # Send service traffic through the namespace waypoint for L7 policy enforcement.
+    istio.io/use-waypoint: waypoint
