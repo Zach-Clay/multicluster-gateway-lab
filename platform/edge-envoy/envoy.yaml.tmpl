@@ -1,0 +1,88 @@
+# A local stand-in for a cloud global load balancer. The aggregate cluster preserves the
+# order below: us-east receives traffic first; us-west is used only when east is unhealthy.
+static_resources:
+  listeners:
+    - name: edge_http
+      address:
+        socket_address: { address: 0.0.0.0, port_value: 8080 }
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: edge_http
+                codec_type: AUTO
+                route_config:
+                  name: edge_routes
+                  virtual_hosts:
+                    - name: all_traffic
+                      domains: ["*"]
+                      routes:
+                        - match: { prefix: "/" }
+                          route: { cluster: global_orders, timeout: 5s }
+                http_filters:
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+    - name: global_orders
+      connect_timeout: 1s
+      lb_policy: CLUSTER_PROVIDED
+      cluster_type:
+        name: envoy.clusters.aggregate
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.clusters.aggregate.v3.ClusterConfig
+          # Order defines cross-cluster priority: east is primary, west is failover.
+          clusters: [us-east, us-west]
+
+    - name: us-east
+      type: STATIC
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: us-east
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address: { address: ${US_EAST_GATEWAY_IP}, port_value: 80 }
+      health_checks:
+        - timeout: 1s
+          interval: 2s
+          unhealthy_threshold: 2
+          healthy_threshold: 1
+          http_health_check: { path: /api/orders/healthz }
+      outlier_detection:
+        consecutive_5xx: 2
+        interval: 2s
+        base_ejection_time: 15s
+        max_ejection_percent: 100
+
+    - name: us-west
+      type: STATIC
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: us-west
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address: { address: ${US_WEST_GATEWAY_IP}, port_value: 80 }
+      health_checks:
+        - timeout: 1s
+          interval: 2s
+          unhealthy_threshold: 2
+          healthy_threshold: 1
+          http_health_check: { path: /api/orders/healthz }
+      outlier_detection:
+        consecutive_5xx: 2
+        interval: 2s
+        base_ejection_time: 15s
+        max_ejection_percent: 100
+
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address: { address: 0.0.0.0, port_value: 9901 }

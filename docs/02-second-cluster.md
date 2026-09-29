@@ -90,6 +90,8 @@ that layer straightforward to reason about and test.
 Clusters can be deleted independently:
 
 ```bash
-make down CLUSTER=us-west
-make down                 # removes us-east
+make down-cluster CLUSTER=us-west
+make down-cluster                 # removes us-east
 ```
+
+Use `make down` when the entire lab—including the edge Envoy added in Phase 3—should be removed.
