@@ -1,7 +1,7 @@
 # multicluster-gateway-lab
 # Every target acts on ONE cluster, chosen with CLUSTER=us-east|us-west (default us-east).
-#   make up                      # build phase 1: one cluster with Envoy Gateway + demo APIs
-#   make up CLUSTER=us-west      # the same for the second cluster
+#   make up                      # build the us-east cluster with Envoy Gateway + demo APIs
+#   make up CLUSTER=us-west      # build the independent us-west cluster the same way
 #   make demo-routing            # curl through the gateway
 #   make down                    # delete the cluster
 SHELL := /bin/bash
@@ -20,7 +20,7 @@ help: ## Show this help
 tools: ## Verify required CLIs are installed
 	@for t in docker kind kubectl helm; do command -v $$t >/dev/null || { echo "missing: $$t"; exit 1; }; done; echo "all tools present"
 
-up: tools cluster metallb envoy-gateway build load deploy status ## Create the cluster and install everything (phase 1)
+up: tools cluster metallb envoy-gateway build load deploy status ## Create the selected cluster and install everything
 
 cluster: ## Create the kind cluster
 	@scripts/cluster-up.sh
